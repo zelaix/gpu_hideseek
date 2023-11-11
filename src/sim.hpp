@@ -26,9 +26,9 @@ using madrona::phys::ExternalTorque;
 
 namespace consts {
 
-static inline constexpr int32_t maxBoxes = 5;
-static inline constexpr int32_t maxRamps = 2;
-static inline constexpr int32_t maxAgents = 5;
+static inline constexpr int32_t maxBoxes = 1;
+static inline constexpr int32_t maxRamps = 1;
+static inline constexpr int32_t maxAgents = 4;
 
 }
 
