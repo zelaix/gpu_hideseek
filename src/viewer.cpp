@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
         (std::filesystem::path(DATA_DIR) / "cube_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "wall_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "agent_render.obj").string().c_str(),
+        (std::filesystem::path(DATA_DIR) / "agent_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "ramp_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "elongated_render.obj").string().c_str(),
     }, Span<char>(import_err.data(), import_err.size()));
@@ -92,7 +93,8 @@ int main(int argc, char *argv[])
     auto materials = std::to_array<imp::SourceMaterial>({
         { math::Vector4{0.4f, 0.4f, 0.4f, 0.0f}, -1, 0.8f, 0.2f,},
         { math::Vector4{1.0f, 0.1f, 0.1f, 0.0f}, -1, 0.8f, 0.2f,},
-        { math::Vector4{0.1f, 0.1f, 1.0f, 0.0f}, 1, 0.8f, 1.0f,},
+        { math::Vector4{0.1f, 0.1f, 1.0f, 0.0f}, 1, 0.8f, 1.0f,},  // blue
+        { math::Vector4{1.0f, 0.1f, 0.1f, 0.0f}, 2, 0.8f, 1.0f,},  // red
         { math::Vector4{0.5f, 0.3f, 0.3f, 0.0f},  0, 0.8f, 0.2f,},
         { rgb8ToFloat(191, 108, 10), -1, 0.8f, 0.2f },
         { rgb8ToFloat(12, 144, 150), -1, 0.8f, 0.2f },
@@ -100,14 +102,17 @@ int main(int argc, char *argv[])
     });
 
     const_cast<uint32_t&>(render_assets->objects[0].meshes[0].materialIDX) = 0;
-    const_cast<uint32_t&>(render_assets->objects[1].meshes[0].materialIDX) = 3;
+    const_cast<uint32_t&>(render_assets->objects[1].meshes[0].materialIDX) = 4;
     const_cast<uint32_t&>(render_assets->objects[2].meshes[0].materialIDX) = 1;
     const_cast<uint32_t&>(render_assets->objects[3].meshes[0].materialIDX) = 0;
     const_cast<uint32_t&>(render_assets->objects[4].meshes[0].materialIDX) = 2;
-    const_cast<uint32_t&>(render_assets->objects[4].meshes[1].materialIDX) = 6;
-    const_cast<uint32_t&>(render_assets->objects[4].meshes[2].materialIDX) = 6;
-    const_cast<uint32_t&>(render_assets->objects[5].meshes[0].materialIDX) = 4;
+    const_cast<uint32_t&>(render_assets->objects[4].meshes[1].materialIDX) = 7;
+    const_cast<uint32_t&>(render_assets->objects[4].meshes[2].materialIDX) = 7;
+    const_cast<uint32_t&>(render_assets->objects[5].meshes[0].materialIDX) = 3;
+    const_cast<uint32_t&>(render_assets->objects[5].meshes[1].materialIDX) = 7;
+    const_cast<uint32_t&>(render_assets->objects[5].meshes[2].materialIDX) = 7;
     const_cast<uint32_t&>(render_assets->objects[6].meshes[0].materialIDX) = 5;
+    const_cast<uint32_t&>(render_assets->objects[7].meshes[0].materialIDX) = 6;
 
     math::Quat initial_camera_rotation =
         (math::Quat::angleAxis(-math::pi / 2.f, math::up) *
@@ -131,7 +136,9 @@ int main(int argc, char *argv[])
         { (std::filesystem::path(DATA_DIR) /
            "green_grid.png").string().c_str() },
         { (std::filesystem::path(DATA_DIR) /
-           "smile.png").string().c_str() },
+           "hider.png").string().c_str() },
+        { (std::filesystem::path(DATA_DIR) /
+           "seeker.png").string().c_str() },
     });
 
     viewer.configureLighting({

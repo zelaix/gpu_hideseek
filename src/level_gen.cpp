@@ -124,7 +124,7 @@ static void generateTrainingEnvironment(Engine &ctx,
             // Check overlap with all other entities
             if (checkOverlap(aabb) || rejections == max_rejections) {
                 ctx.data().boxes[i] = all_entities[num_entities++] =
-                    makeDynObject(ctx, pos, rot, 6);
+                    makeDynObject(ctx, pos, rot, 7);
 
                 ctx.data().boxSizes[i] = { 8, 1.5 };
                 ctx.data().boxRotations[i] = box_rotation;
@@ -201,7 +201,7 @@ static void generateTrainingEnvironment(Engine &ctx,
 
             if (checkOverlap(aabb) || rejections == max_rejections) {
                 ctx.data().ramps[i] = all_entities[num_entities++] =
-                    makeDynObject(ctx, pos, rot, 5);
+                    makeDynObject(ctx, pos, rot, 6);
                 ctx.data().rampRotations[i] = ramp_rotation;
                 break;
             }
@@ -230,7 +230,8 @@ static void generateTrainingEnvironment(Engine &ctx,
                         Vector3 { 0, 0, 1.5 }, view_idx);
         }
 
-        ObjectID agent_obj_id = ObjectID { 4 };
+        // ObjectID agent_obj_id = ObjectID { 4 };
+        ObjectID agent_obj_id = is_hider ? ObjectID { 4 } : ObjectID { 5 };
         ctx.get<ObjectID>(agent) = agent_obj_id;
         ctx.get<phys::broadphase::LeafID>(agent) =
             phys::RigidBodyPhysicsSystem::registerEntity(ctx, agent,
@@ -326,6 +327,8 @@ void generateEnvironment(Engine &ctx,
 
     ctx.data().curEpisodeSeed = episode_idx;
 
+    // generateDebugEnvironment(ctx, 8);
+
     if (level_id == 1) {
         generateTrainingEnvironment(ctx, num_hiders, num_seekers);
     } else {
@@ -396,7 +399,7 @@ static void level4(Engine &ctx)
     //all_entities[total_entities++] = test_cube;
 
     all_entities[total_entities++] =
-        makeDynObject(ctx, pos + Vector3 {0, 0, 5}, rot, 6,
+        makeDynObject(ctx, pos + Vector3 {0, 0, 5}, rot, 7,
                       ResponseType::Dynamic, OwnerTeam::None,
                       {1, 1, 1});
 
@@ -528,7 +531,8 @@ static void level6(Engine &ctx)
                     Vector3 { 0, 0, 0.8 }, view_idx);
         }
 
-        ObjectID agent_obj_id = ObjectID { 4 };
+        // ObjectID agent_obj_id = ObjectID { 4 };
+        ObjectID agent_obj_id = is_hider ? ObjectID { 4 } : ObjectID { 5 };
         ctx.get<ObjectID>(agent) = agent_obj_id;
         ctx.get<phys::broadphase::LeafID>(agent) =
             phys::RigidBodyPhysicsSystem::registerEntity(ctx, agent,
@@ -616,7 +620,7 @@ static void level8(Engine &ctx)
         Quat::angleAxis(toRadians(45), {1, 0, 0})).normalize();
 
     Entity ramp_dyn = all_entities[total_entities++] =
-        makeDynObject(ctx, ramp_pos, ramp_rot, 5);
+        makeDynObject(ctx, ramp_pos, ramp_rot, 6);
 
     ctx.get<Velocity>(ramp_dyn).linear = {0, 0, -30};
 
@@ -625,7 +629,7 @@ static void level8(Engine &ctx)
                       {-0.5, -0.5, 1},
                       (Quat::angleAxis(toRadians(-90), {1, 0, 0 }) *
                           Quat::angleAxis(pi, {0, 1, 0 })).normalize(),
-                      5,
+                      6,
                       ResponseType::Static, OwnerTeam::None,
                       {1, 1, 1});
 

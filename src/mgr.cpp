@@ -84,7 +84,7 @@ static void loadPhysicsObjects(PhysicsLoader &loader)
         imported_hulls->objects.size());
 
     DynArray<DynArray<SourceCollisionPrimitive>> prim_arrays(0);
-    HeapArray<SourceCollisionObject> src_objs(imported_hulls->objects.size() + 2);
+    HeapArray<SourceCollisionObject> src_objs(imported_hulls->objects.size() + 3);
 
     // Sphere (0)
     src_objs[0] = {
@@ -144,22 +144,29 @@ static void loadPhysicsObjects(PhysicsLoader &loader)
         });
     }
 
-    { // Cylinder (4)
+    { // Cylinder: Hider (4) 
         src_objs[4] = setupHull(2, 1.f, {
             .muS = 0.01f,
             .muD = 0.01f,
         });
     }
 
-    { // Ramp (5)
-        src_objs[5] = setupHull(3, 0.5f, {
+    { // Cylinder: Seeker (5)
+        src_objs[5] = setupHull(2, 1.f, {
+            .muS = 0.01f,
+            .muD = 0.01f,
+        });
+    }
+
+    { // Ramp (6)
+        src_objs[6] = setupHull(3, 0.5f, {
             .muS = 0.5f,
             .muD = 1.f,
         });
     }
 
-    { // Elongated Box (6)
-        src_objs[6] = setupHull(4, 0.5f, {
+    { // Elongated Box (7)
+        src_objs[7] = setupHull(4, 0.5f, {
             .muS = 0.5f,
             .muD = 4.f,
         });
@@ -201,6 +208,7 @@ Manager::Impl * Manager::Impl::init(
         (std::filesystem::path(DATA_DIR) / "plane.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "cube_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "wall_render.obj").string().c_str(),
+        (std::filesystem::path(DATA_DIR) / "cylinder_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "cylinder_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "ramp_render.obj").string().c_str(),
         (std::filesystem::path(DATA_DIR) / "elongated_render.obj").string().c_str(),
