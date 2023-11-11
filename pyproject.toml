@@ -5,7 +5,7 @@ backend-path = ["external/madrona/py"]
 
 [project]
 name = "gpu_hideseek"
-version = "0.0.1"
+version = "0.1.0"
 
 [tool.madrona.packages.gpu_hideseek]
 ext-only = true
