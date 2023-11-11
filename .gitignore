@@ -5,3 +5,4 @@ build-debug
 test
 checkpoints
 replays
+imgui.ini
