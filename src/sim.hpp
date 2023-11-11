@@ -26,9 +26,9 @@ using madrona::phys::ExternalTorque;
 
 namespace consts {
 
-static inline constexpr int32_t maxBoxes = 9;
+static inline constexpr int32_t maxBoxes = 5;
 static inline constexpr int32_t maxRamps = 2;
-static inline constexpr int32_t maxAgents = 6;
+static inline constexpr int32_t maxAgents = 5;
 
 }
 
@@ -100,38 +100,65 @@ struct AgentActiveMask {
 };
 
 struct GlobalDebugPositions {
-    madrona::math::Vector2 boxPositions[consts::maxBoxes];
-    madrona::math::Vector2 rampPositions[consts::maxRamps];
-    madrona::math::Vector2 agentPositions[consts::maxAgents];
+    madrona::math::Vector3 boxPositions[consts::maxBoxes];
+    madrona::math::Vector3 rampPositions[consts::maxRamps];
+    madrona::math::Vector3 agentPositions[consts::maxAgents];
+};
+
+struct SelfObservation {
+    madrona::math::Vector3 pos;
+    madrona::math::Vector2 fwd;
+    madrona::math::Vector3 vel;
+    // float angle;
+    float angVel;
+    float isHider;
+    float prepPercent;
+    float curStep;
+    // vector_door_obs_self doorObs;
 };
 
 struct AgentObservation {
-    madrona::math::Vector2 pos;
-    madrona::math::Vector2 vel;
+    madrona::math::Vector3 pos;
+    madrona::math::Vector2 fwd;
+    madrona::math::Vector3 vel;
+    // float angle;
+    float angVel;
+    float isHider;
+    float prepPercent;
 };
 
 struct BoxObservation {
-    madrona::math::Vector2 pos;
-    madrona::math::Vector2 vel;
-    madrona::math::Vector2 boxSize;
-    float boxRotation;
+    madrona::math::Vector3 pos;
+    madrona::math::Vector2 fwd;
+    madrona::math::Vector3 vel;
+    float angVel;
+    float isLocked;
+    // float youLocked;
+    float teamLocked;
+    // madrona::math::Vector2 boxSize;
+    // float boxRotation;
 };
 
 struct RampObservation {
-    madrona::math::Vector2 pos;
-    madrona::math::Vector2 vel;
-    float rampRotation;
+    madrona::math::Vector3 pos;
+    madrona::math::Vector2 fwd;
+    madrona::math::Vector3 vel;
+    float angVel;
+    float isLocked;
+    // float youLocked;
+    float teamLocked;
+    // float rampRotation;
 };
 
-struct RelativeAgentObservations {
+struct OtherAgentObservations {
     AgentObservation obs[consts::maxAgents - 1];
 };
 
-struct RelativeBoxObservations {
+struct AllBoxObservations {
     BoxObservation obs[consts::maxBoxes];
 };
 
-struct RelativeRampObservations {
+struct AllRampObservations {
     RampObservation obs[consts::maxRamps];
 };
 
@@ -163,9 +190,10 @@ struct AgentInterface : public madrona::Archetype<
     Action,
     AgentType,
     AgentActiveMask,
-    RelativeAgentObservations,
-    RelativeBoxObservations,
-    RelativeRampObservations,
+    SelfObservation,
+    OtherAgentObservations,
+    AllBoxObservations,
+    AllRampObservations,
     AgentVisibilityMasks,
     BoxVisibilityMasks,
     RampVisibilityMasks,

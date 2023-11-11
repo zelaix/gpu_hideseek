@@ -1,3 +1,4 @@
+#include <iostream>
 #include <madrona/mw_gpu_entry.hpp>
 
 #include "sim.hpp"
@@ -32,9 +33,10 @@ void Sim::registerTypes(ECSRegistry &registry,
     registry.registerComponent<SimEntity>();
 
     registry.registerComponent<AgentActiveMask>();
-    registry.registerComponent<RelativeAgentObservations>();
-    registry.registerComponent<RelativeBoxObservations>();
-    registry.registerComponent<RelativeRampObservations>();
+    registry.registerComponent<SelfObservation>();
+    registry.registerComponent<OtherAgentObservations>();
+    registry.registerComponent<AllBoxObservations>();
+    registry.registerComponent<AllRampObservations>();
     registry.registerComponent<AgentVisibilityMasks>();
     registry.registerComponent<BoxVisibilityMasks>();
     registry.registerComponent<RampVisibilityMasks>();
@@ -53,17 +55,18 @@ void Sim::registerTypes(ECSRegistry &registry,
     registry.exportSingleton<WorldReset>(0);
     registry.exportColumn<AgentInterface, AgentPrepCounter>(2);
     registry.exportColumn<AgentInterface, Action>(3);
-    registry.exportColumn<AgentInterface, AgentType>(5);
-    registry.exportColumn<AgentInterface, AgentActiveMask>(6);
-    registry.exportColumn<AgentInterface, RelativeAgentObservations>(7);
-    registry.exportColumn<AgentInterface, RelativeBoxObservations>(8);
-    registry.exportColumn<AgentInterface, RelativeRampObservations>(9);
+    registry.exportColumn<AgentInterface, AgentType>(4);
+    registry.exportColumn<AgentInterface, AgentActiveMask>(5);
+    registry.exportColumn<AgentInterface, SelfObservation>(6);
+    registry.exportColumn<AgentInterface, OtherAgentObservations>(7);
+    registry.exportColumn<AgentInterface, AllBoxObservations>(8);
+    registry.exportColumn<AgentInterface, AllRampObservations>(9);
     registry.exportColumn<AgentInterface, AgentVisibilityMasks>(10);
     registry.exportColumn<AgentInterface, BoxVisibilityMasks>(11);
     registry.exportColumn<AgentInterface, RampVisibilityMasks>(12);
-    registry.exportColumn<AgentInterface, Lidar>(14);
-    registry.exportColumn<AgentInterface, Seed>(15);
-    registry.exportSingleton<GlobalDebugPositions>(13);
+    registry.exportColumn<AgentInterface, Lidar>(13);
+    registry.exportColumn<AgentInterface, Seed>(14);
+    registry.exportSingleton<GlobalDebugPositions>(15);
 }
 
 static inline void resetEnvironment(Engine &ctx)
@@ -345,6 +348,9 @@ inline void actionSystem(Engine &ctx, Action &action, SimEntity sim_e,
     action.l = 0;
 }
 
+// Original code make the agents easier to control by zeroing out their velocity
+// after each step. We do not do this because in the original HnS environment 
+// the velocity is none-zero and is part of the observation.
 inline void agentZeroVelSystem(Engine &,
                                Velocity &vel,
                                viz::VizCamera &)
@@ -360,9 +366,10 @@ inline void collectObservationsSystem(Engine &ctx,
                                       Entity agent_e,
                                       SimEntity sim_e,
                                       AgentType agent_type,
-                                      RelativeAgentObservations &agent_obs,
-                                      RelativeBoxObservations &box_obs,
-                                      RelativeRampObservations &ramp_obs,
+                                      SelfObservation &self_obs,
+                                      OtherAgentObservations &agent_obs,
+                                      AllBoxObservations &box_obs,
+                                      AllRampObservations &ramp_obs,
                                       AgentPrepCounter &prep_counter)
 {
     if (sim_e.e == Entity::none() || agent_type == AgentType::Camera) {
@@ -370,12 +377,25 @@ inline void collectObservationsSystem(Engine &ctx,
     }
 
     CountT cur_step = ctx.data().curEpisodeStep;
+    float prep_percent = 1.0;
     if (cur_step <= numPrepSteps) {
         prep_counter.numPrepStepsLeft = numPrepSteps - cur_step;
-    } 
+        prep_percent = float(cur_step) / numPrepSteps;
+    }
 
     Vector3 agent_pos = ctx.get<Position>(sim_e.e);
     Quat agent_rot = ctx.get<Rotation>(sim_e.e);
+    Vector3 agent_fwd = agent_rot.rotateVec(math::fwd);
+    Vector3 agent_vel = ctx.get<Velocity>(sim_e.e).linear;
+    Vector3 agent_ang_vel = ctx.get<Velocity>(sim_e.e).angular;
+
+    self_obs.pos = { agent_pos.x, agent_pos.y, agent_pos.z };
+    self_obs.fwd = { agent_fwd.x, agent_fwd.y };
+    self_obs.vel = { agent_vel.x, agent_vel.y, agent_vel.z };
+    self_obs.angVel = agent_ang_vel.z;
+    self_obs.isHider = float(agent_type == AgentType::Hider);
+    self_obs.prepPercent = prep_percent;
+    self_obs.curStep = float(cur_step);
 
     CountT num_boxes = ctx.data().numActiveBoxes;
     for (CountT box_idx = 0; box_idx < consts::maxBoxes; box_idx++) {
@@ -389,24 +409,43 @@ inline void collectObservationsSystem(Engine &ctx,
         Entity box_e = ctx.data().boxes[box_idx];
 
         Vector3 box_pos = ctx.get<Position>(box_e);
-        Vector3 box_vel = ctx.get<Velocity>(box_e).linear;
         Quat box_rot = ctx.get<Rotation>(box_e);
+        Vector3 box_fwd = box_rot.rotateVec(math::fwd);
+        Vector3 box_vel = ctx.get<Velocity>(box_e).linear;
+        Vector3 box_ang_vel = ctx.get<Velocity>(box_e).angular;
 
-        Vector3 box_relative_pos =
-            agent_rot.inv().rotateVec(box_pos - agent_pos);
-        Vector3 box_relative_vel =
-            agent_rot.inv().rotateVec(box_vel);
+        auto &box_type = ctx.get<ResponseType>(box_e);
+        bool box_locked = false;
+        bool box_team_locked = false;
+        if (box_type == ResponseType::Static) {
+            box_locked = true;
+            OwnerTeam box_owner = ctx.get<OwnerTeam>(box_e);
+            if ((agent_type == AgentType::Seeker && box_owner == OwnerTeam::Seeker) || 
+            (agent_type == AgentType::Hider && box_owner == OwnerTeam::Hider)) {
+                box_team_locked = true;
+            }
+        }
 
-        obs.pos = { box_relative_pos.x, box_relative_pos.y };
-        obs.vel = { box_relative_vel.x, box_relative_vel.y };
-        obs.boxSize = ctx.data().boxSizes[box_idx];
+        // Vector3 box_relative_pos =
+        //     agent_rot.inv().rotateVec(box_pos - agent_pos);
+        // Vector3 box_relative_vel =
+        //     agent_rot.inv().rotateVec(box_vel);
 
-        Quat relative_rot = agent_rot * box_rot.inv();
-        obs.boxRotation = atan2f(
-            2.f * (relative_rot.w * relative_rot.z +
-                   relative_rot.x * relative_rot.y),
-            1.f - 2.f * (relative_rot.y * relative_rot.y +
-                         relative_rot.z * relative_rot.z));
+        obs.pos = { box_pos.x, box_pos.y, box_pos.z };
+        obs.fwd = { box_fwd.x, box_fwd.y };
+        obs.vel = { box_vel.x, box_vel.y, box_vel.z };
+        obs.angVel = box_ang_vel.z;
+        obs.isLocked = float(box_locked);
+        obs.teamLocked = float(box_team_locked);
+
+        // obs.boxSize = ctx.data().boxSizes[box_idx];
+
+        // Quat relative_rot = agent_rot * box_rot.inv();
+        // obs.boxRotation = atan2f(
+        //     2.f * (relative_rot.w * relative_rot.z +
+        //            relative_rot.x * relative_rot.y),
+        //     1.f - 2.f * (relative_rot.y * relative_rot.y +
+        //                  relative_rot.z * relative_rot.z));
     }
 
     CountT num_ramps = ctx.data().numActiveRamps;
@@ -421,23 +460,41 @@ inline void collectObservationsSystem(Engine &ctx,
         Entity ramp_e = ctx.data().ramps[ramp_idx];
 
         Vector3 ramp_pos = ctx.get<Position>(ramp_e);
-        Vector3 ramp_vel = ctx.get<Velocity>(ramp_e).linear;
         Quat ramp_rot = ctx.get<Rotation>(ramp_e);
+        Vector3 ramp_fwd = ramp_rot.rotateVec(math::fwd);
+        Vector3 ramp_vel = ctx.get<Velocity>(ramp_e).linear;
+        Vector3 ramp_ang_vel = ctx.get<Velocity>(ramp_e).angular;
 
-        Vector3 ramp_relative_pos =
-            agent_rot.inv().rotateVec(ramp_pos - agent_pos);
-        Vector3 ramp_relative_vel =
-            agent_rot.inv().rotateVec(ramp_vel);
+        auto &ramp_type = ctx.get<ResponseType>(ramp_e);
+        bool ramp_locked = false;
+        bool ramp_team_locked = false;
+        if (ramp_type == ResponseType::Static) {
+            ramp_locked = true;
+            OwnerTeam ramp_owner = ctx.get<OwnerTeam>(ramp_e);
+            if ((agent_type == AgentType::Seeker && ramp_owner == OwnerTeam::Seeker) || 
+            (agent_type == AgentType::Hider && ramp_owner == OwnerTeam::Hider)) {
+                ramp_team_locked = true;
+            }
+        }
 
-        obs.pos = { ramp_relative_pos.x, ramp_relative_pos.y };
-        obs.vel = { ramp_relative_vel.x, ramp_relative_vel.y };
+        // Vector3 ramp_relative_pos =
+        //     agent_rot.inv().rotateVec(ramp_pos - agent_pos);
+        // Vector3 ramp_relative_vel =
+        //     agent_rot.inv().rotateVec(ramp_vel);
 
-        Quat relative_rot = agent_rot * ramp_rot.inv();
-        obs.rampRotation = atan2f(
-            2.f * (relative_rot.w * relative_rot.z +
-                   relative_rot.x * relative_rot.y),
-            1.f - 2.f * (relative_rot.y * relative_rot.y +
-                         relative_rot.z * relative_rot.z));
+        obs.pos = { ramp_pos.x, ramp_pos.y, ramp_pos.z };
+        obs.fwd = { ramp_fwd.x, ramp_fwd.y };
+        obs.vel = { ramp_vel.x, ramp_vel.y, ramp_vel.z };
+        obs.angVel = ramp_ang_vel.z;
+        obs.isLocked = float(ramp_locked);
+        obs.teamLocked = float(ramp_team_locked);
+
+        // Quat relative_rot = agent_rot * ramp_rot.inv();
+        // obs.rampRotation = atan2f(
+        //     2.f * (relative_rot.w * relative_rot.z +
+        //            relative_rot.x * relative_rot.y),
+        //     1.f - 2.f * (relative_rot.y * relative_rot.y +
+        //                  relative_rot.z * relative_rot.z));
     }
 
     CountT num_agents = ctx.data().numActiveAgents;
@@ -457,18 +514,19 @@ inline void collectObservationsSystem(Engine &ctx,
 
         auto &obs = agent_obs.obs[num_other_agents++];
 
-        Vector3 other_agent_pos =
-            ctx.get<Position>(other_agent_sim_e);
-        Vector3 other_agent_vel =
-            ctx.get<Velocity>(other_agent_sim_e).linear;
+        AgentType other_agent_type = ctx.get<AgentType>(other_agent_e);
+        Vector3 other_agent_pos = ctx.get<Position>(other_agent_sim_e);
+        Quat other_agent_rot = ctx.get<Rotation>(other_agent_sim_e);
+        Vector3 other_agent_fwd = other_agent_rot.rotateVec(math::fwd);
+        Vector3 other_agent_vel = ctx.get<Velocity>(other_agent_sim_e).linear;
+        Vector3 other_agent_ang_vel = ctx.get<Velocity>(other_agent_sim_e).angular;
 
-        Vector3 other_agent_relative_pos =
-            agent_rot.inv().rotateVec(other_agent_pos - agent_pos);
-        Vector3 other_agent_relative_vel =
-            agent_rot.inv().rotateVec(other_agent_vel);
-
-        obs.pos = { other_agent_relative_pos.x, other_agent_relative_pos.y };
-        obs.vel = { other_agent_relative_vel.x, other_agent_relative_vel.y };
+        obs.pos = { other_agent_pos.x, other_agent_pos.y, other_agent_pos.z };
+        obs.fwd = { other_agent_fwd.x, other_agent_fwd.y };
+        obs.vel = { other_agent_vel.x, other_agent_vel.y, other_agent_vel.z };
+        obs.angVel = other_agent_ang_vel.z;
+        obs.isHider = float(other_agent_type == AgentType::Hider);
+        obs.prepPercent = prep_percent;
     }
 }
 
@@ -762,38 +820,38 @@ inline void globalPositionsDebugSystem(Engine &ctx,
 
     for (CountT i = 0; i < consts::maxBoxes; i++) {
         if (i >= ctx.data().numActiveBoxes) {
-            global_positions.boxPositions[i] = Vector2 {0, 0};
+            global_positions.boxPositions[i] = Vector3 {0, 0, 0};
             continue;
         }
 
         global_positions.boxPositions[i] =
-            getXY(ctx.get<Position>(ctx.data().boxes[i]));
+            ctx.get<Position>(ctx.data().boxes[i]);
     }
 
     for (CountT i = 0; i < consts::maxRamps; i++) {
         if (i >= ctx.data().numActiveRamps) {
-            global_positions.rampPositions[i] = Vector2 {0, 0};
+            global_positions.rampPositions[i] = Vector3 {0, 0, 0};
             continue;
         }
 
         global_positions.rampPositions[i] =
-            getXY(ctx.get<Position>(ctx.data().ramps[i]));
+            ctx.get<Position>(ctx.data().ramps[i]);
     }
 
     {
         CountT out_offset = 0;
         for (CountT i = 0; i < ctx.data().numHiders; i++) {
             global_positions.agentPositions[out_offset++] = 
-                getXY(ctx.get<Position>(ctx.data().hiders[i]));
+                ctx.get<Position>(ctx.data().hiders[i]);
         }
 
         for (CountT i = 0; i < ctx.data().numSeekers; i++) {
             global_positions.agentPositions[out_offset++] = 
-                getXY(ctx.get<Position>(ctx.data().seekers[i]));
+                ctx.get<Position>(ctx.data().seekers[i]);
         }
 
         for (; out_offset < consts::maxAgents; out_offset++) {
-            global_positions.agentPositions[out_offset++] = Vector2 {0, 0};
+            global_positions.agentPositions[out_offset++] = Vector3 {0, 0, 0};
         }
     }
 }
@@ -893,9 +951,10 @@ void Sim::setupTasks(TaskGraphBuilder &builder, const Config &cfg)
             Entity,
             SimEntity,
             AgentType,
-            RelativeAgentObservations,
-            RelativeBoxObservations,
-            RelativeRampObservations,
+            SelfObservation,
+            OtherAgentObservations,
+            AllBoxObservations,
+            AllRampObservations,
             AgentPrepCounter
         >>({post_reset_broadphase});
 

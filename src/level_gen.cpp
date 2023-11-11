@@ -57,11 +57,14 @@ static void generateTrainingEnvironment(Engine &ctx,
 {
     auto &rng = ctx.data().rng;
 
-    CountT total_num_boxes = CountT(rng.rand() * 6) + 3;
-    assert(total_num_boxes < consts::maxBoxes);
+    // CountT total_num_boxes = CountT(rng.rand() * 6) + 3;
+    CountT total_num_boxes = CountT(rng.rand() * 2) + 3;
+    // CountT total_num_boxes = 1;
+    assert(total_num_boxes <= consts::maxBoxes);
 
     CountT num_elongated = 
     CountT(ctx.data().rng.rand() * (total_num_boxes - 3)) + 3;
+    // CountT num_elongated = 0;
 
     CountT num_cubes = total_num_boxes - num_elongated;
 
