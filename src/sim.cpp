@@ -808,7 +808,7 @@ inline void outputRewardsDonesSystem(Engine &ctx,
 
     Vector3 pos = ctx.get<Position>(sim_e.e);
 
-    if (fabsf(pos.x) >= 18.f || fabsf(pos.y) >= 18.f) {
+    if (fabsf(pos.x) >= 15.f || fabsf(pos.y) >= 15.f) {
         reward_val -= 10.f;
     }
 
