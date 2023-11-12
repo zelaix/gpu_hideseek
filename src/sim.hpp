@@ -84,11 +84,11 @@ struct DynamicObject : public madrona::Archetype<
 > {};
 
 struct Action {
-    int32_t x;
-    int32_t y;
-    int32_t r;
-    int32_t g;
-    int32_t l;
+    int32_t x;  // [0, 10]: 0 = move left, 5 = no move, 10 = move right
+    int32_t y;  // [0, 10]: 0 = move backward, 5 = no move, 10 = move forward
+    int32_t r;  // [0, 10]: 0 = rotate clockwise, 5 = no rotat, 10 = rotate counterclockwise
+    int32_t g;  // [0, 1]: 0 = don't grab, 1 = grab
+    int32_t l;  // [0, 1]: 0 = don't lock, 1 = lock
 };
 
 struct SimEntity {

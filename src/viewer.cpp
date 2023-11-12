@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    uint32_t num_views = 5;
+    uint32_t num_views = 4;
 
     const char *replay_log_path = nullptr;
     if (argc >= 4) {

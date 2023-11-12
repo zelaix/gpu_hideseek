@@ -355,11 +355,18 @@ inline void agentZeroVelSystem(Engine &,
                                Velocity &vel,
                                viz::VizCamera &)
 {
+    // Orignial: zero out velocity
     vel.linear.x = 0;
     vel.linear.y = 0;
     vel.linear.z = fminf(vel.linear.z, 0);
 
     vel.angular = Vector3::zero();
+
+    // Only zero out vel.angular.x and vel.angular.y
+    // vel.angular.x = 0;
+    // vel.angular.y = 0;
+
+    // Do not zero out anythin
 }
 
 inline void collectObservationsSystem(Engine &ctx,
