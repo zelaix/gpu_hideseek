@@ -1,5 +1,7 @@
-# Gravity issue
-seekers' gravity seems to be wrong. run `./build/viewer 1 --cpu replays/test/gravity_test` to see the problem.
+# Important
+
+To enable ramp use, the Wall need to be no higher than the ramp.
+Set scale.z to 0.8 of Walls that can be crossed.
 
 Hide & Seek GPU Batch Simulator
 ===============================
