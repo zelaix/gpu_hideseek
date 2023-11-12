@@ -1,3 +1,6 @@
+# Gravity issue
+seekers' gravity seems to be wrong. run `./build/viewer 1 --cpu replays/test/gravity_test` to see the problem.
+
 Hide & Seek GPU Batch Simulator
 ===============================
 

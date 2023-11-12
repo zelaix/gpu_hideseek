@@ -596,7 +596,7 @@ static void generateDebugQuadrantEnvironment(Engine &ctx)
             // boxes are spawned inside the room
             Vector3 pos {
                 -10.f,
-                -8.f,
+                -10.f,
                 1.0f,
             };
             float box_rotation = 0 * math::pi;
@@ -689,13 +689,11 @@ static void generateDebugQuadrantEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            // Hiders are spawned randomly in the environment
-            Vector3 pos {
-                20.f * i - 10.f,
-                -10.f,
-                0.f,
-            };
-            const auto rot = Quat::angleAxis(0, {0, 0, 1});
+            Vector3 pos {0.f, 4.f, 0.f};
+            if (i == 1) {
+                pos = Vector3 {100.f, 0.f, 0.f};
+            }
+            const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
 
             AABB aabb = obj_mgr.rigidBodyAABBs[4];
@@ -712,12 +710,10 @@ static void generateDebugQuadrantEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            // Seekers are only spawned outside the room
-            Vector3 pos {
-                20.f * i - 10.f,
-                10.f,
-                0.f,
-            };
+            Vector3 pos {0.f, 0.f, 0.f};
+            if (i == 1) {
+                pos = Vector3 {-100.f, 0.f, 0.f};
+            }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
 
@@ -746,8 +742,8 @@ void generateEnvironment(Engine &ctx,
 
     ctx.data().curEpisodeSeed = episode_idx;
 
-    // generateDebugQuadrantEnvironment(ctx);
-    generateQuadrantEnvironment(ctx, 2, 2);
+    generateDebugQuadrantEnvironment(ctx);
+    // generateQuadrantEnvironment(ctx, 2, 2);
 
     // if (level_id == 1) {
     //     generateTrainingEnvironment(ctx, num_hiders, num_seekers);
