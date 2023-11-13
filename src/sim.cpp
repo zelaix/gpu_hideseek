@@ -142,7 +142,7 @@ inline void resetSystem(Engine &ctx, WorldReset &reset)
         ctx.data().curEpisodeStep += 1;
     }
 
-    ctx.data().hiderTeamReward.store_relaxed(1.f);
+    ctx.data().hiderTeamReward.store_relaxed(0.f);
 }
 
 #if 0
@@ -356,27 +356,27 @@ inline void agentZeroVelSystem(Engine &,
                                viz::VizCamera &)
 {
     // Orignial: zero out velocity
-    // vel.linear.x = 0;
-    // vel.linear.y = 0;
-    // vel.linear.z = fminf(vel.linear.z, 0);
+    vel.linear.x = 0;
+    vel.linear.y = 0;
+    vel.linear.z = fminf(vel.linear.z, 0);
 
-    // vel.angular = Vector3::zero();
+    vel.angular = Vector3::zero();
 
     // Set maximum speed
-    float max_vel = 25.0f;
-    float xy_vel = Vector2 {vel.linear.x, vel.linear.y}.length();
-    if (xy_vel > max_vel) {
-        vel.linear.x = vel.linear.x / xy_vel * max_vel;
-        vel.linear.y = vel.linear.y / xy_vel * max_vel;
-    }
-    vel.linear.z = fmaxf(vel.linear.z, -max_vel);
-    vel.linear.z = fminf(vel.linear.z, max_vel);
+    // float max_vel = 25.0f;
+    // float xy_vel = Vector2 {vel.linear.x, vel.linear.y}.length();
+    // if (xy_vel > max_vel) {
+    //     vel.linear.x = vel.linear.x / xy_vel * max_vel;
+    //     vel.linear.y = vel.linear.y / xy_vel * max_vel;
+    // }
+    // vel.linear.z = fmaxf(vel.linear.z, -max_vel);
+    // vel.linear.z = fminf(vel.linear.z, max_vel);
 
-    float max_ang_vel = 10.0f;
-    vel.angular.x = 0;
-    vel.angular.y = 0;
-    vel.angular.z = fmaxf(vel.angular.z, -max_ang_vel);
-    vel.angular.z = fminf(vel.angular.z, max_ang_vel);
+    // float max_ang_vel = 10.0f;
+    // vel.angular.x = 0;
+    // vel.angular.y = 0;
+    // vel.angular.z = fmaxf(vel.angular.z, -max_ang_vel);
+    // vel.angular.z = fminf(vel.angular.z, max_ang_vel);
 
     // Only zero out vel.angular.x and vel.angular.y
     // vel.angular.x = 0;
@@ -692,12 +692,13 @@ inline void computeVisibilitySystem(Engine &ctx,
 
         bool is_visible = checkVisibility(other_agent_sim_e);
 
-        if (agent_type == AgentType::Seeker && is_visible) {
-            AgentType other_type = ctx.get<AgentType>(other_agent_e);
-            if (other_type == AgentType::Hider) {
-                ctx.data().hiderTeamReward.store_relaxed(-1.f);
-            }
-        }
+        // if (agent_type == AgentType::Seeker && is_visible) {
+        //     AgentType other_type = ctx.get<AgentType>(other_agent_e);
+        //     if (other_type == AgentType::Hider) {
+        //         float cur_reward = ctx.data().hiderTeamReward.load_relaxed();
+        //         ctx.data().hiderTeamReward.store_relaxed(cur_reward - 1.f);
+        //     }
+        // }
 
         agent_vis.visible[num_other_agents++] = is_visible;
     }
@@ -794,7 +795,8 @@ inline void rewardsVisSystem(Engine &ctx,
         float max_dist = 10.f;
         float to_hider_dist = to_hider.length();
         if (hit_entity == hider_sim_e && to_hider_dist <= max_dist) {
-            ctx.data().hiderTeamReward.store_relaxed(-1);
+            float cur_reward = ctx.data().hiderTeamReward.load_relaxed();
+            ctx.data().hiderTeamReward.store_relaxed(cur_reward - 1.f);
             break;
         }
     }
@@ -827,9 +829,10 @@ inline void outputRewardsDonesSystem(Engine &ctx,
     }
 
     float reward_val = ctx.data().hiderTeamReward.load_relaxed();
-    if (agent_type == AgentType::Seeker) {
-        reward_val *= -1.f;
-    }
+    // if (agent_type == AgentType::Seeker) {
+    //     reward_val *= -1.f;
+    // }
+    reward_val *= -1.f;
 
     Vector3 pos = ctx.get<Position>(sim_e.e);
 
@@ -1076,7 +1079,7 @@ Sim::Sim(Engine &ctx,
         .numSeekers = 2,
     };
 
-    ctx.data().hiderTeamReward.store_relaxed(1.f);
+    ctx.data().hiderTeamReward.store_relaxed(0.f);
 }
 
 MADRONA_BUILD_MWGPU_ENTRY(Engine, Sim, Config, WorldInit);
