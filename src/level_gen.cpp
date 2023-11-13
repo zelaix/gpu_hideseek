@@ -380,7 +380,8 @@ static void generateQuadrantEnvironment(Engine &ctx,
             ResponseType::Static, OwnerTeam::Unownable, {0.2f, left_length / 2, 0.8f} );
         all_entities[num_entities++] = makeDynObject(
             ctx, {0, -(2 * length - right_length / 2), 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
-            ResponseType::Static, OwnerTeam::Unownable, {0.2f, right_length / 2, 0.8f} );   
+            ResponseType::Static, OwnerTeam::Unownable, {0.2f, right_length / 2, 0.8f} );
+        ctx.data().doorObs = Vector3 {0.f, -left_length - door_size / 2, door_size};
     } else {
         float top_length = 1 + rng.rand() * (2 * length - door_size - 2);
         float bottom_length = 2 * length - door_size - top_length;
@@ -393,6 +394,7 @@ static void generateQuadrantEnvironment(Engine &ctx,
         all_entities[num_entities++] = makeDynObject(
             ctx, {-(2 * length - bottom_length / 2), 0, 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
             ResponseType::Static, OwnerTeam::Unownable, {bottom_length / 2, 0.2f, 0.8f} );
+        ctx.data().doorObs = Vector3 {-top_length - door_size / 2, 0.f, door_size};
     }
 
     // Make boxes

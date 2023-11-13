@@ -489,7 +489,7 @@ Tensor Manager::agentActiveMaskTensor() const
 madrona::py::Tensor Manager::selfObsTensor() const
 {
     return exportStateTensor(6, Tensor::ElementType::Float32,
-                             {impl_->cfg.numWorlds * consts::maxAgents, 12});
+                             {impl_->cfg.numWorlds * consts::maxAgents, 15});
 }
 
 madrona::py::Tensor Manager::agentObsTensor() const

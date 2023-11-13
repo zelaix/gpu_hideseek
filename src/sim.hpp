@@ -114,7 +114,7 @@ struct SelfObservation {
     float isHider;
     float prepPercent;
     float curStep;
-    // vector_door_obs_self doorObs;
+    madrona::math::Vector3 doorObs;
 };
 
 struct AgentObservation {
@@ -250,6 +250,8 @@ struct Sim : public madrona::WorldBase {
     CountT numHiders;
     Entity seekers[3];
     CountT numSeekers;
+
+    madrona::math::Vector3 doorObs;
 
     Entity boxes[consts::maxBoxes];
     madrona::math::Vector2 boxSizes[consts::maxBoxes];

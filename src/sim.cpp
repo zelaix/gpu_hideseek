@@ -411,6 +411,7 @@ inline void collectObservationsSystem(Engine &ctx,
     Vector3 agent_fwd = agent_rot.rotateVec(math::fwd);
     Vector3 agent_vel = ctx.get<Velocity>(sim_e.e).linear;
     Vector3 agent_ang_vel = ctx.get<Velocity>(sim_e.e).angular;
+    Vector3 door_obs = ctx.data().doorObs;
 
     self_obs.pos = { agent_pos.x, agent_pos.y, agent_pos.z };
     self_obs.fwd = { agent_fwd.x, agent_fwd.y };
@@ -419,6 +420,7 @@ inline void collectObservationsSystem(Engine &ctx,
     self_obs.isHider = float(agent_type == AgentType::Hider);
     self_obs.prepPercent = prep_percent;
     self_obs.curStep = float(cur_step);
+    self_obs.doorObs = { door_obs.x, door_obs.y, door_obs.z };
 
     CountT num_boxes = ctx.data().numActiveBoxes;
     for (CountT box_idx = 0; box_idx < consts::maxBoxes; box_idx++) {
