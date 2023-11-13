@@ -909,7 +909,7 @@ static void generateVisibilityTestEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {-30.f, 10.f, 1.f};
+            Vector3 pos {0.f, 4.f, 1.f};
             if (i == 1) {
                 pos = Vector3 {100.f, 0.f, 1.f};
             }

@@ -589,8 +589,14 @@ inline void computeVisibilitySystem(Engine &ctx,
         Vector3 hit_normal;
         Entity hit_entity =
             bvh.traceRay(agent_pos, to_other, &hit_t, &hit_normal, 1.f);
+        
+        float max_dist = 10.f;
+        float to_other_dist = to_other.length();
+        if (hit_entity == other_e && to_other_dist <= max_dist) {
+            return 1.f;
+        }
 
-        return hit_entity == other_e ? 1.f : 0.f;
+        return 0.f;
     };
 
 #ifdef MADRONA_GPU_MODE
@@ -784,8 +790,10 @@ inline void rewardsVisSystem(Engine &ctx,
         Vector3 hit_normal;
         Entity hit_entity =
             bvh.traceRay(seeker_pos, to_hider, &hit_t, &hit_normal, 1.f);
-
-        if (hit_entity == hider_sim_e) {
+        
+        float max_dist = 10.f;
+        float to_hider_dist = to_hider.length();
+        if (hit_entity == hider_sim_e && to_hider_dist <= max_dist) {
             ctx.data().hiderTeamReward.store_relaxed(-1);
             break;
         }
