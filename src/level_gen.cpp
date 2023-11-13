@@ -555,7 +555,225 @@ static void generateQuadrantEnvironment(Engine &ctx,
     ctx.data().numObstacles = num_entities;
 }
 
-static void generateDebugQuadrantEnvironment(Engine &ctx)
+static void generateQuadrantDebugEnvironment(Engine &ctx,
+                                             CountT num_hiders,
+                                             CountT num_seekers)
+{
+    // Set quadrant length
+    float length = 7.5f;
+    float door_size = 2.5f;
+    auto &rng = ctx.data().rng;
+    CountT num_entities = 0;
+    Entity *all_entities = ctx.data().obstacles;
+
+    // Init object manager to check overlaps
+    const CountT max_rejections = 20;
+    const ObjectManager &obj_mgr = *ctx.singleton<ObjectData>().mgr;
+    auto checkOverlap = [&obj_mgr, &ctx,
+                         &all_entities, &num_entities](const AABB &aabb) {
+        for (int i = 0; i < num_entities; ++i) {
+            ObjectID obj_id = ctx.get<ObjectID>(all_entities[i]);
+            AABB other = obj_mgr.rigidBodyAABBs[obj_id.idx];
+
+            Position p = ctx.get<Position>(all_entities[i]);
+            Rotation r = ctx.get<Rotation>(all_entities[i]);
+            Scale s = ctx.get<Scale>(all_entities[i]);
+            other = other.applyTRS(p, r, Diag3x3(s));
+
+            if (aabb.overlaps(other)) {
+                return false;
+            }
+        }
+        return true;
+    };    
+
+    // Make plane
+    all_entities[num_entities++] =
+        makePlane(ctx, {0, 0, 0}, Quat::angleAxis(0, {1, 0, 0}));
+
+    // Make quadrant
+    all_entities[num_entities++] = makeDynObject(
+        ctx, {0, -2 * length, 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
+        ResponseType::Static, OwnerTeam::Unownable, {2 * length, 0.2f, 1.f} );
+    all_entities[num_entities++] = makeDynObject(
+        ctx, {0, 2 * length, 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
+        ResponseType::Static, OwnerTeam::Unownable, {2 * length, 0.2f, 1.f} );
+    all_entities[num_entities++] = makeDynObject(
+        ctx, {-2 * length, 0, 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
+        ResponseType::Static, OwnerTeam::Unownable, {0.2f, 2 * length, 1.f} );
+    all_entities[num_entities++] = makeDynObject(
+        ctx, {2 * length, 0, 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
+        ResponseType::Static, OwnerTeam::Unownable, {0.2f, 2 * length, 1.f} );
+
+    // Make room
+    float left_length = 6;
+    float right_length = 2 * length - door_size - left_length;
+    all_entities[num_entities++] = makeDynObject(
+        ctx, {-length, 0, 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
+        ResponseType::Static, OwnerTeam::Unownable, {length, 0.2f, 0.8f} );
+    all_entities[num_entities++] = makeDynObject(
+        ctx, {0, -left_length / 2, 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
+        ResponseType::Static, OwnerTeam::Unownable, {0.2f, left_length / 2, 0.8f} );
+    all_entities[num_entities++] = makeDynObject(
+        ctx, {0, -(2 * length - right_length / 2), 0}, Quat::angleAxis(0, {1, 0, 0}), 3,
+        ResponseType::Static, OwnerTeam::Unownable, {0.2f, right_length / 2, 0.8f} );   
+
+    // Make boxes
+    const CountT num_boxes = consts::maxBoxes;
+    for (CountT i = 0; i < num_boxes; i++) {
+        CountT rejections = 0;
+        while (true) {
+            // boxes are spawned inside the room
+            Vector3 pos {-4, -7.5, 1.0f};
+            float box_rotation = 0 * math::pi;
+            const auto rot = Quat::angleAxis(box_rotation, {0, 0, 1});
+            Diag3x3 scale = {1.0f, 1.0f, 1.0f};
+
+            AABB aabb = obj_mgr.rigidBodyAABBs[2];
+            aabb = aabb.applyTRS(pos, rot, scale);
+            if (checkOverlap(aabb) || rejections == max_rejections) {
+                ctx.data().boxes[i] = all_entities[num_entities++] =
+                    makeDynObject(ctx, pos, rot, 2);
+                ctx.data().boxSizes[i] = { 2, 2 };
+                ctx.data().boxRotations[i] = box_rotation;
+                break;
+            }
+            ++rejections;
+        }
+    }
+    ctx.data().numActiveBoxes = num_boxes;
+
+    // Make ramps
+    const CountT num_ramps = consts::maxRamps;
+    for (CountT i = 0; i < num_ramps; i++) {
+        CountT rejections = 0;
+        while (true) {
+            // ramps are spawned randomly in the environment
+            Vector3 pos {
+                -2 * length + 4 * rng.rand() * length,
+                -2 * length + 4 * rng.rand() * length,
+                1.0f,
+            };
+            float ramp_rotation = rng.rand() * math::pi;
+            const auto rot = Quat::angleAxis(ramp_rotation, {0, 0, 1});
+            Diag3x3 scale = {1.0f, 1.0f, 1.0f};
+
+            AABB aabb = obj_mgr.rigidBodyAABBs[6];
+            aabb = aabb.applyTRS(pos, rot, scale);
+            if (checkOverlap(aabb) || rejections == max_rejections) {
+                ctx.data().ramps[i] = all_entities[num_entities++] =
+                    makeDynObject(ctx, pos, rot, 6);
+                ctx.data().rampRotations[i] = ramp_rotation;
+                break;
+            }
+            ++rejections;
+        }
+    }
+    ctx.data().numActiveRamps = num_ramps;
+
+    auto makeDynAgent = [&](Vector3 pos, Quat rot, bool is_hider,
+                            int32_t view_idx) {
+        Entity agent = makeAgent<DynAgent>(ctx,
+            is_hider ? AgentType::Hider : AgentType::Seeker);
+        ctx.get<Position>(agent) = pos;
+        ctx.get<Rotation>(agent) = rot;
+        ctx.get<Scale>(agent) = Diag3x3 { 1, 1, 1 };
+        if (ctx.data().enableBatchRender) {
+            ctx.get<render::BatchRenderCamera>(agent) =
+                render::BatchRenderingSystem::setupView(ctx, 90.f, 0.001f,
+                    Vector3 { 0, 0, 0.8 }, view_idx);
+        }
+
+        if (ctx.data().enableViewer) {
+            ctx.get<viz::VizCamera>(agent) =
+                viz::VizRenderingSystem::setupView(ctx, 90.f, 0.001f,
+                        Vector3 { 0, 0, 1.5 }, view_idx);
+        }
+
+        // ObjectID agent_obj_id = ObjectID { 4 };
+        ObjectID agent_obj_id = is_hider ? ObjectID { 4 } : ObjectID { 5 };
+        ctx.get<ObjectID>(agent) = agent_obj_id;
+        ctx.get<phys::broadphase::LeafID>(agent) =
+            phys::RigidBodyPhysicsSystem::registerEntity(ctx, agent,
+                                                         agent_obj_id);
+
+        ctx.get<Velocity>(agent) = {
+            Vector3::zero(),
+            Vector3::zero(),
+        };
+        ctx.get<ResponseType>(agent) = ResponseType::Dynamic;
+        ctx.get<OwnerTeam>(agent) = OwnerTeam::Unownable;
+        ctx.get<ExternalForce>(agent) = Vector3::zero();
+        ctx.get<ExternalTorque>(agent) = Vector3::zero();
+        ctx.get<GrabData>(agent).constraintEntity = Entity::none();
+
+        return agent;
+    };
+
+    // Make hiders
+    for (CountT i = 0; i < num_hiders; i++) {
+        CountT rejections = 0;
+        while (true) {
+            // Hiders are spawned randomly in the environment
+            Vector3 pos {-8, -7.5, 1.0f};
+            if (i == 1) {
+                pos = {8, 6.25, 1.0f};
+            }
+            const auto rot = Quat::angleAxis(-0.5 * math::pi, {0, 0, 1});
+            Diag3x3 scale = {1.0f, 1.0f, 1.0f};
+
+            AABB aabb = obj_mgr.rigidBodyAABBs[4];
+            aabb = aabb.applyTRS(pos, rot, scale);
+            if (checkOverlap(aabb) || rejections == max_rejections) {
+                makeDynAgent(pos, rot, true, i);
+                break;
+            }
+            rejections++;
+        }
+    }
+
+    // Make seekers
+    for (CountT i = 0; i < num_seekers; i++) {
+        CountT rejections = 0;
+        while (true) {
+            // Seekers are only spawned outside the room
+            Vector3 pos {
+                -length + 2 * rng.rand() * length,
+                -length + 2 * rng.rand() * length,
+                1.f,
+            };
+            CountT quadrant = CountT(rng.u32Rand() % 3) + 1;
+            switch (quadrant) {
+                case 1: {
+                    pos.x += length;
+                    pos.y += length;
+                } break;
+                case 2: {
+                    pos.x -= length;
+                    pos.y += length;
+                } break;
+                case 3: {
+                    pos.x += length;
+                    pos.y -= length;
+                } break;
+            }
+            const auto rot = Quat::angleAxis(rng.rand() * math::pi, {0, 0, 1});
+            Diag3x3 scale = {1.0f, 1.0f, 1.0f};
+
+            AABB aabb = obj_mgr.rigidBodyAABBs[5];
+            aabb = aabb.applyTRS(pos, rot, scale);
+            if (checkOverlap(aabb) || rejections == max_rejections) {
+                makeDynAgent(pos, rot, false, num_hiders + i);
+                break;
+            }
+            rejections++;
+        }
+    }
+
+    ctx.data().numObstacles = num_entities;
+}
+
+static void generateVisibilityTestEnvironment(Engine &ctx)
 {
     // Set quadrant length
     float length = 7.5f;
@@ -1212,10 +1430,11 @@ void generateEnvironment(Engine &ctx,
 
     ctx.data().curEpisodeSeed = episode_idx;
 
-    // generateDebugQuadrantEnvironment(ctx);
+    // generateVisibilityTestEnvironment(ctx);
     // generateSizeTestEnvironment(ctx);
     // generateLockBoxTestEnvironment(ctx);
     // generateRampUseTestEnvironment(ctx);
+    // generateQuadrantDebugEnvironment(ctx, 2, 2);
     generateQuadrantEnvironment(ctx, 2, 2);
 
     // if (level_id == 1) {
