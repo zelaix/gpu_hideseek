@@ -146,14 +146,14 @@ static void loadPhysicsObjects(PhysicsLoader &loader)
     }
 
     { // Cylinder: Hider (4) 
-        src_objs[4] = setupHull(2, 1.f, {
+        src_objs[4] = setupHull(2, 0.5f, {
             .muS = 0.01f,
             .muD = 0.01f,
         });
     }
 
     { // Cylinder: Seeker (5)
-        src_objs[5] = setupHull(3, 1.f, {
+        src_objs[5] = setupHull(3, 0.5f, {
             .muS = 0.01f,
             .muD = 0.01f,
         });

@@ -356,27 +356,27 @@ inline void agentZeroVelSystem(Engine &,
                                viz::VizCamera &)
 {
     // Orignial: zero out velocity
-    vel.linear.x = 0;
-    vel.linear.y = 0;
-    vel.linear.z = fminf(vel.linear.z, 0);
+    // vel.linear.x = 0;
+    // vel.linear.y = 0;
+    // vel.linear.z = fminf(vel.linear.z, 0);
 
-    vel.angular = Vector3::zero();
+    // vel.angular = Vector3::zero();
 
     // Set maximum speed
-    // float max_vel = 25.0f;
-    // float xy_vel = Vector2 {vel.linear.x, vel.linear.y}.length();
-    // if (xy_vel > max_vel) {
-    //     vel.linear.x = vel.linear.x / xy_vel * max_vel;
-    //     vel.linear.y = vel.linear.y / xy_vel * max_vel;
-    // }
-    // vel.linear.z = fmaxf(vel.linear.z, -max_vel);
-    // vel.linear.z = fminf(vel.linear.z, max_vel);
+    float max_vel = 25.0f;
+    float xy_vel = Vector2 {vel.linear.x, vel.linear.y}.length();
+    if (xy_vel > max_vel) {
+        vel.linear.x = vel.linear.x / xy_vel * max_vel;
+        vel.linear.y = vel.linear.y / xy_vel * max_vel;
+    }
+    vel.linear.z = fmaxf(vel.linear.z, -max_vel);
+    vel.linear.z = fminf(vel.linear.z, max_vel);
 
-    // float max_ang_vel = 10.0f;
-    // vel.angular.x = 0;
-    // vel.angular.y = 0;
-    // vel.angular.z = fmaxf(vel.angular.z, -max_ang_vel);
-    // vel.angular.z = fminf(vel.angular.z, max_ang_vel);
+    float max_ang_vel = 10.0f;
+    vel.angular.x = 0;
+    vel.angular.y = 0;
+    vel.angular.z = fmaxf(vel.angular.z, -max_ang_vel);
+    vel.angular.z = fminf(vel.angular.z, max_ang_vel);
 
     // Only zero out vel.angular.x and vel.angular.y
     // vel.angular.x = 0;
