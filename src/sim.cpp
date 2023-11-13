@@ -799,7 +799,7 @@ inline void rewardsVisSystem(Engine &ctx,
         if (hit_entity == hider_sim_e && to_hider_dist <= max_dist) {
             float cur_reward = ctx.data().hiderTeamReward.load_relaxed();
             ctx.data().hiderTeamReward.store_relaxed(cur_reward - 1.f);
-            break;
+            // break;
         }
     }
 }
