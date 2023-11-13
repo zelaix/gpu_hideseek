@@ -194,20 +194,18 @@ int main(int argc, char *argv[])
     auto reward_printer = mgr.rewardTensor().makePrinter();
 
     auto printObs = [&]() {
-        printf("Global Position\n");
-        global_pos_printer.print();
+        // printf("Global Position\n");
+        // global_pos_printer.print();
         printf("Prep Counter\n");
         prep_count_printer.print();
         printf("Agents\n");
         self_obs_printer.print();
         printf("Visible Agents Mask\n");
         agent_mask_printer.print();
-        printf("Lidar\n");
-        lidar_printer.print();
+        // printf("Lidar\n");
+        // lidar_printer.print();
         printf("Reward\n");
-        reward_printer.print();
-        
-
+        reward_printer.print();  
         printf("\n");
     };
 
