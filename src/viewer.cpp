@@ -188,8 +188,8 @@ int main(int argc, char *argv[])
 
     auto global_pos_printer = mgr.globalPositionsTensor().makePrinter();
     auto prep_count_printer = mgr.prepCounterTensor().makePrinter();
-    auto vis_agents_printer = mgr.agentDataTensor().makePrinter();
-    auto vis_agents_mask_printer = mgr.visibleAgentsMaskTensor().makePrinter();
+    auto self_obs_printer = mgr.selfObsTensor().makePrinter();
+    auto agent_mask_printer = mgr.agentMaskTensor().makePrinter();
     auto lidar_printer = mgr.lidarTensor().makePrinter();
     auto reward_printer = mgr.rewardTensor().makePrinter();
 
@@ -199,9 +199,9 @@ int main(int argc, char *argv[])
         printf("Prep Counter\n");
         prep_count_printer.print();
         printf("Agents\n");
-        vis_agents_printer.print();
+        self_obs_printer.print();
         printf("Visible Agents Mask\n");
-        vis_agents_mask_printer.print();
+        agent_mask_printer.print();
         printf("Lidar\n");
         lidar_printer.print();
         printf("Reward\n");

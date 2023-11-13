@@ -499,7 +499,7 @@ static void generateQuadrantEnvironment(Engine &ctx,
             Vector3 pos {
                 -2 * length + 4 * rng.rand() * length,
                 -2 * length + 4 * rng.rand() * length,
-                0.f,
+                1.f,
             };
             const auto rot = Quat::angleAxis(rng.rand() * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -522,7 +522,7 @@ static void generateQuadrantEnvironment(Engine &ctx,
             Vector3 pos {
                 -length + 2 * rng.rand() * length,
                 -length + 2 * rng.rand() * length,
-                0.f,
+                1.f,
             };
             CountT quadrant = CountT(rng.u32Rand() % 3) + 1;
             switch (quadrant) {
@@ -691,9 +691,9 @@ static void generateDebugQuadrantEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {0.f, 4.f, 0.f};
+            Vector3 pos {-30.f, 10.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {100.f, 0.f, 0.f};
+                pos = Vector3 {100.f, 0.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -712,9 +712,9 @@ static void generateDebugQuadrantEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {0.f, 0.f, 0.f};
+            Vector3 pos {0.f, 0.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {-100.f, 0.f, 0.f};
+                pos = Vector3 {-100.f, 0.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -870,9 +870,9 @@ static void generateSizeTestEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {-100.f, 0.f, 0.f};
+            Vector3 pos {-100.f, 0.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {100.f, 0.f, 0.f};
+                pos = Vector3 {100.f, 0.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -891,9 +891,9 @@ static void generateSizeTestEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {0.f, -100.f, 0.f};
+            Vector3 pos {0.f, -100.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {0.f, 100.f, 0.f};
+                pos = Vector3 {0.f, 100.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -1017,9 +1017,9 @@ static void generateRampUseTestEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {0.f, -4.f, 0.f};
+            Vector3 pos {0.f, -4.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {100.f, 0.f, 0.f};
+                pos = Vector3 {100.f, 0.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -1038,9 +1038,9 @@ static void generateRampUseTestEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {0.f, 100.f, 0.f};
+            Vector3 pos {0.f, 100.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {0.f, -100.f, 0.f};
+                pos = Vector3 {0.f, -100.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -1159,9 +1159,9 @@ static void generateLockBoxTestEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {0.f, -4.f, 0.f};
+            Vector3 pos {0.f, -4.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {100.f, 0.f, 0.f};
+                pos = Vector3 {100.f, 0.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -1180,9 +1180,9 @@ static void generateLockBoxTestEnvironment(Engine &ctx)
     for (CountT i = 0; i < 2; i++) {
         CountT rejections = 0;
         while (true) {
-            Vector3 pos {0.f, 100.f, 0.f};
+            Vector3 pos {0.f, 100.f, 1.f};
             if (i == 1) {
-                pos = Vector3 {0.f, -100.f, 0.f};
+                pos = Vector3 {0.f, -100.f, 1.f};
             }
             const auto rot = Quat::angleAxis(0 * math::pi, {0, 0, 1});
             Diag3x3 scale = {1.0f, 1.0f, 1.0f};
@@ -1214,9 +1214,9 @@ void generateEnvironment(Engine &ctx,
 
     // generateDebugQuadrantEnvironment(ctx);
     // generateSizeTestEnvironment(ctx);
-    generateLockBoxTestEnvironment(ctx);
+    // generateLockBoxTestEnvironment(ctx);
     // generateRampUseTestEnvironment(ctx);
-    // generateQuadrantEnvironment(ctx, 2, 2);
+    generateQuadrantEnvironment(ctx, 2, 2);
 
     // if (level_id == 1) {
     //     generateTrainingEnvironment(ctx, num_hiders, num_seekers);
