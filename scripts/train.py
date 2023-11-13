@@ -118,12 +118,13 @@ else:
 
 ckpt_dir.mkdir(exist_ok=True, parents=True)
 
-obs, num_obs_features = setup_obs(sim)
+obs, num_obs_features = setup_obs(sim, args.num_worlds)
 policy = make_policy(num_obs_features, args.num_channels, args.separate_value)
 
-actions = sim.action_tensor().to_torch()
-dones = sim.done_tensor().to_torch()
-rewards = sim.reward_tensor().to_torch()
+seeker_idx = torch.tensor([False, False, True, True] * args.num_worlds, dtype=torch.bool)
+actions = sim.action_tensor().to_torch()[seeker_idx]
+dones = sim.done_tensor().to_torch()[seeker_idx]
+rewards = sim.reward_tensor().to_torch()[seeker_idx]
 
 # Flatten N, A, ... tensors to N * A, ...
 # actions = actions.view(-1, *actions.shape[2:])

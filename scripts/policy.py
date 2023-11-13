@@ -13,12 +13,13 @@ from gpu_hideseek_learn.rnn import LSTM
 import math
 import torch
 
-def setup_obs(sim):
-    self_obs_tensor = sim.self_obs_tensor().to_torch()
-    agent_obs_tensor = sim.agent_obs_tensor().to_torch()
-    box_obs_tensor = sim.box_obs_tensor().to_torch()
-    ramp_obs_tensor = sim.ramp_obs_tensor().to_torch()
-    lidar_tensor = sim.lidar_tensor().to_torch()
+def setup_obs(sim, num_worlds):
+    seeker_idx = torch.tensor([False, False, True, True] * num_worlds, dtype=torch.bool)
+    self_obs_tensor = sim.self_obs_tensor().to_torch()[seeker_idx]
+    agent_obs_tensor = sim.agent_obs_tensor().to_torch()[seeker_idx]
+    box_obs_tensor = sim.box_obs_tensor().to_torch()[seeker_idx]
+    ramp_obs_tensor = sim.ramp_obs_tensor().to_torch()[seeker_idx]
+    lidar_tensor = sim.lidar_tensor().to_torch()[seeker_idx]
     # steps_remaining_tensor = sim.steps_remaining_tensor().to_torch()
 
     # # Add in an agent ID tensor
